@@ -1,8 +1,8 @@
 """
-Konfiguracja i stałe dla Kombajnu Triathlonisty.
+Konfiguracja i stałe dla Kombajnu Kolarza.
 
 Ten moduł zawiera wszystkie wartości domyślne, stałe konfiguracyjne
-i parametry, które wcześniej były zakodowane na sztywno w kodzie.
+i parametry dla dziennika treningowego zgodnego z WKO5/INSCYD.
 """
 
 from dataclasses import dataclass
@@ -32,6 +32,94 @@ DEFAULTS = DefaultValues()
 
 
 # =============================================================================
+# POWER METRICS (WKO5)
+# =============================================================================
+
+@dataclass(frozen=True)
+class PowerDefaults:
+    """Domyślne wartości dla metryk mocy (WKO5)."""
+    
+    FTP: int = 250              # Functional Threshold Power (W)
+    MAX_HR: int = 185           # Tętno maksymalne
+    RESTING_HR: int = 50        # Tętno spoczynkowe
+    WEIGHT_KG: float = 75.0     # Waga (kg) do obliczeń W/kg
+
+
+POWER_DEFAULTS = PowerDefaults()
+
+
+# =============================================================================
+# METABOLIC PROFILING (INSCYD)
+# =============================================================================
+
+@dataclass(frozen=True)
+class MetabolicDefaults:
+    """Domyślne wartości dla profilu metabolicznego (INSCYD)."""
+    
+    VO2MAX: float = 55.0        # ml/kg/min - maksymalne zużycie tlenu
+    VLAMAX: float = 0.50        # mmol/L/s - max produkcja mleczanu
+    FATMAX_PERCENT: float = 0.55  # % FTP gdzie max spalanie tłuszczu
+    
+
+METABOLIC_DEFAULTS = MetabolicDefaults()
+
+
+# =============================================================================
+# STREFY MOCY (COGGAN)
+# =============================================================================
+
+@dataclass(frozen=True)
+class PowerZone:
+    """Definicja strefy mocy."""
+    number: int
+    name: str
+    name_en: str
+    min_pct: float
+    max_pct: float
+    description: str
+
+
+POWER_ZONES: List[PowerZone] = [
+    PowerZone(1, "Aktywna regeneracja", "Active Recovery", 0.00, 0.55,
+              "Bardzo łatwa jazda, regeneracja po ciężkim treningu"),
+    PowerZone(2, "Wytrzymałość", "Endurance", 0.55, 0.75,
+              "Długie jazdy aerobowe, budowanie bazy tlenowej"),
+    PowerZone(3, "Tempo", "Tempo", 0.75, 0.90,
+              "Umiarkowanie ciężka praca, trening tempa"),
+    PowerZone(4, "Próg (Sweet Spot)", "Threshold", 0.90, 1.05,
+              "Praca na progu FTP, bardzo efektywny trening"),
+    PowerZone(5, "VO2max", "VO2max", 1.05, 1.20,
+              "Krótkie interwały 3-8 min, rozwój VO2max"),
+    PowerZone(6, "Anaerobowa", "Anaerobic", 1.20, 1.50,
+              "Bardzo krótkie wysiłki 30s-2min, praca glikolityczna"),
+    PowerZone(7, "Nerwowo-mięśniowa", "Neuromuscular", 1.50, 3.00,
+              "Sprinty <30s, maksymalna moc rekrutacji mięśni"),
+]
+
+
+# =============================================================================
+# STREFY TĘTNA
+# =============================================================================
+
+@dataclass(frozen=True)
+class HRZone:
+    """Definicja strefy tętna."""
+    number: int
+    name: str
+    min_pct: float  # % HRmax
+    max_pct: float
+
+
+HR_ZONES: List[HRZone] = [
+    HRZone(1, "Z1 - Regeneracja", 0.50, 0.60),
+    HRZone(2, "Z2 - Wytrzymałość", 0.60, 0.70),
+    HRZone(3, "Z3 - Tempo", 0.70, 0.80),
+    HRZone(4, "Z4 - Próg", 0.80, 0.90),
+    HRZone(5, "Z5 - VO2max", 0.90, 1.00),
+]
+
+
+# =============================================================================
 # PARAMETRY ARKUSZY
 # =============================================================================
 
@@ -39,14 +127,13 @@ DEFAULTS = DefaultValues()
 class SheetConfig:
     """Konfiguracja parametrów arkuszy."""
     
-    # Liczba wierszy do przygotowania w dzienniku
     MAX_LOG_ROWS: int = 1000
-    
-    # Liczba dni do automatycznego wypełnienia dat
     INITIAL_DAYS_COUNT: int = 90
+    OUTPUT_FILENAME: str = "dziennik_kolarza_v3.xlsx"
     
-    # Nazwa pliku wyjściowego
-    OUTPUT_FILENAME: str = "kombajn_triathlonisty_v2.xlsx"
+    # Parametry PMC (Performance Management Chart)
+    CTL_DAYS: int = 42   # Chronic Training Load - 42 dni
+    ATL_DAYS: int = 7    # Acute Training Load - 7 dni
 
 
 SHEET_CONFIG = SheetConfig()
@@ -61,85 +148,115 @@ class Colors:
     """Paleta kolorów używana w arkuszach."""
     
     # Nagłówki
-    HEADER_BG: str = "4F81BD"      # Niebieski
+    HEADER_BG: str = "2E5090"      # Ciemnoniebieski
     HEADER_TEXT: str = "FFFFFF"    # Biały
     
     # Komórki do wpisywania
     INPUT_BG: str = "FFFFCC"       # Jasny żółty
     
     # Komórki z formułami
-    FORMULA_BG: str = "F2F2F2"     # Jasny szary
+    FORMULA_BG: str = "E8E8E8"     # Jasny szary
     
     # Tekst informacyjny
-    INFO_TEXT: str = "808080"      # Szary
+    INFO_TEXT: str = "666666"      # Szary
+    
+    # Strefy mocy
+    ZONE_1: str = "B4C6E7"  # Jasnoniebieski - regeneracja
+    ZONE_2: str = "92D050"  # Zielony - wytrzymałość
+    ZONE_3: str = "FFEB9C"  # Żółty - tempo
+    ZONE_4: str = "FFC000"  # Pomarańczowy - próg
+    ZONE_5: str = "FF6600"  # Ciemny pomarańcz - VO2max
+    ZONE_6: str = "FF0000"  # Czerwony - anaerobowa
+    ZONE_7: str = "7030A0"  # Fioletowy - nerwowo-mięśniowa
+    
+    # PMC
+    CTL_COLOR: str = "0070C0"  # Niebieski - fitness
+    ATL_COLOR: str = "FF6699"  # Różowy - zmęczenie
+    TSB_COLOR: str = "00B050"  # Zielony - forma
 
 
 COLORS = Colors()
 
 
 # =============================================================================
-# NAGŁÓWKI DZIENNIKA
+# NAGŁÓWKI DZIENNIKA KOLARSKIEGO
 # =============================================================================
 
 LOG_HEADERS: List[str] = [
-    # Ogólne
-    "Data", "Tydzień",
-    # Fizjologia (Rano)
-    "Waga (kg)", "Waga (śr. 7-dniowa)", "RHR", "HRV", "Sen (h)", "Jakość snu (1-5)", 
-    "Samopoczucie (1-5)",
-    # Trening (Wpisywane)
-    "Trening (Kcal)", "Trening (Czas, min)", "Jakość Treningu (1-5)",
-    # Dolegliwości (Fizjo)
-    "Dolegliwości (Opis)", "Dolegliwości (Ból 1-5)",
-    # Obliczenia Kaloryczne (Formuły)
-    "TDEE (Szacowane)", "CEL Kcal (na dziś)",
-    # Spożycie (Wpisywane)
-    "Spożyte Kcal",
-    # Bilans (Formuła)
-    "Bilans Kcal (dnia)",
-    # Obliczenia Makro (Formuły)
-    "CEL Białko (g)", "CEL Tłuszcze (g)", "CEL Węgle (g)",
-    # Spożycie Makro (Wpisywane)
-    "Spożyte Białko (g)", "Spożyte Tłuszcze (g)", "Spożyte Węgle (g)",
-    # Inne (Wpisywane)
-    "Płyny Spożyte (L)", "Suplementy (Notatka)", "Notatki (Ogólne)"
+    # === SEKCJA 1: OGÓLNE ===
+    "Data", "Tydzień", "Dzień tyg.",
+    
+    # === SEKCJA 2: FIZJOLOGIA (RANO) ===
+    "Waga (kg)", "Waga śr. 7d", "RHR", "HRV (ms)", 
+    "Sen (h)", "Jakość snu (1-5)", "Samopoczucie (1-5)",
+    
+    # === SEKCJA 3: DANE TRENINGU (Z GARMIN/ZWIFT) ===
+    "Czas jazdy (min)", "Dystans (km)", "Przewyższenia (m)",
+    "Avg Power (W)", "NP (W)", "Max Power (W)",
+    "Avg Kadencja", "Avg HR", "Max HR",
+    
+    # === SEKCJA 4: METRYKI WKO5 (FORMUŁY) ===
+    "IF", "TSS", "W/kg (NP)", "Strefa dom.",
+    
+    # === SEKCJA 5: PMC (FORMUŁY) ===
+    "CTL", "ATL", "TSB",
+    
+    # === SEKCJA 6: KALORIE ===
+    "Kcal treningu", "TDEE", "CEL Kcal", "Spożyte Kcal", "Bilans Kcal",
+    
+    # === SEKCJA 7: MAKROSKŁADNIKI ===
+    "CEL B (g)", "CEL T (g)", "CEL W (g)",
+    "Spoż. B (g)", "Spoż. T (g)", "Spoż. W (g)",
+    
+    # === SEKCJA 8: CHO PODCZAS TRENINGU ===
+    "CHO/h (g)", "Nawodnienie (L)",
+    
+    # === SEKCJA 9: NOTATKI ===
+    "Typ treningu", "RPE (1-10)", "Notatki"
 ]
 
 # Kolumny do ręcznego wpisania (1-based index) - żółte tło
 LOG_INPUT_COLUMNS: List[int] = [
-    1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    18, 23, 24, 25, 26, 27, 28
+    1,       # Data
+    4,       # Waga (kg)
+    6, 7,    # RHR, HRV
+    8, 9, 10,# Sen, Jakość snu, Samopoczucie
+    11, 12, 13,  # Czas, Dystans, Przewyższenia
+    14, 15, 16,  # Avg/NP/Max Power
+    17, 18, 19,  # Kadencja, HR
+    31,      # Spożyte Kcal
+    35, 36, 37,  # Spożyte makro
+    38, 39,  # CHO/h, Nawodnienie
+    40, 41, 42   # Typ, RPE, Notatki
 ]
 
 # Kolumny kończące sekcje logiczne (gruba prawa krawędź)
 LOG_SECTION_END_COLUMNS: List[int] = [
-    2,   # Po Tydzień
-    8,   # Po Jakość snu
-    9,   # Po Samopoczucie
-    12,  # Po Jakość Treningu
-    14,  # Po Dolegliwości
-    16,  # Po CEL Kcal
-    17,  # Po Spożyte Kcal
-    18,  # Po Bilans
-    21,  # Po CEL Węgle
-    24,  # Po Spożyte Węgle
-    25,  # Po Płyny
-    26,  # Po Suplementy
+    3,   # Po Dzień tyg.
+    10,  # Po Samopoczucie
+    19,  # Po Max HR
+    23,  # Po Strefa dominująca
+    26,  # Po TSB
+    31,  # Po Bilans Kcal
+    37,  # Po Spożyte Węgle
+    39,  # Po Nawodnienie
 ]
 
 # Szerokości kolumn dziennika
 LOG_COLUMN_WIDTHS: List[int] = [
-    12, 8,   # Data, Tydzień
-    10, 10, 8, 8, 8, 10,  # Waga, Waga śr, RHR, HRV, Sen, Jakość snu
-    12,  # Samopoczucie
-    12, 12, 12,  # Trening Kcal, Czas, Jakość
-    25, 12,  # Dolegliwości Opis, Ból
-    12, 12,  # TDEE, CEL Kcal
-    12,  # Spożyte Kcal
-    12,  # Bilans
-    12, 12, 12,  # Cele Makro
-    12, 12, 12,  # Spożyte Makro
-    10, 20, 30   # Płyny, Suple, Notatki
+    12, 6, 6,    # Data, Tydzień, Dzień
+    8, 8, 6, 8,  # Waga, Waga śr, RHR, HRV
+    6, 10, 12,   # Sen, Jakość snu, Samopoczucie
+    10, 10, 12,  # Czas, Dystans, Przewyższenia
+    10, 10, 10,  # Avg/NP/Max Power
+    10, 8, 8,    # Kadencja, HR
+    6, 8, 8, 10, # IF, TSS, W/kg, Strefa
+    8, 8, 8,     # CTL, ATL, TSB
+    10, 10, 10, 10, 10,  # Kalorie
+    8, 8, 8,     # Cele makro
+    8, 8, 8,     # Spożyte makro
+    8, 10,       # CHO/h, Nawodnienie
+    15, 8, 30    # Typ, RPE, Notatki
 ]
 
 
@@ -149,27 +266,46 @@ LOG_COLUMN_WIDTHS: List[int] = [
 
 CHO_HEADERS: List[str] = [
     "Nazwa produktu", "Porcja (g)", "CHO / 100g (g)", "kcal / 100g",
-    "CHO w porcji (g)", "kcal w porcji", "Typ (żel/baton/napój/inne)", "Uwagi"
+    "CHO w porcji (g)", "kcal w porcji", "Typ", "Szybkość wchłaniania", "Uwagi"
 ]
 
-CHO_COLUMN_WIDTHS: List[int] = [30, 14, 14, 14, 16, 14, 20, 40]
+CHO_COLUMN_WIDTHS: List[int] = [30, 12, 12, 12, 14, 12, 15, 18, 35]
 
-# Przykładowe dane produktów CHO
-CHO_SAMPLE_DATA: List[Tuple[str, int, float, int, str, str]] = [
-    ("Banan", 100, 23, 89, "owoc", "Klasyczny wybór przed/po treningu"),
-    ("Żel energetyczny", 40, 60, 240, "żel", "Szybka dawka CHO podczas wysiłku"),
-    ("Rodzynki", 30, 79, 299, "suszone owoce", "Gęste źródło cukrów, wygodne w transporcie"),
-    ("Daktyle (Medjool)", 24, 75, 277, "suszone owoce", "Szybkie i skoncentrowane źródło energii"),
-    ("Miód", 15, 82, 304, "płynne", "Szybkie cukry, łatwe do dodania do napoju"),
-    ("Chleb biały (kromka)", 30, 49, 265, "pieczywo", "Łatwo dostępne źródło węglowodanów"),
-    ("Wafelek ryżowy", 9, 85, 387, "wafelek", "Niska gęstość energetyczna; szybkie węgle"),
-    ("Baton energetyczny (np. Clif)", 68, 48, 400, "baton", 
-     "Kombinacja węgli i tłuszczu — dłuższe uwalnianie energii"),
-    ("Napój izotoniczny (Gatorade)", 250, 6.9, 26, "napój", 
-     "Płynne źródło CHO i elektrolitów podczas treningu"),
-    ("Żelki (gummy)", 40, 72.5, 475, "słodycze", "Szybkie cukry, dobre w krótkich wysiłkach"),
-    ("Maltodekstryna", 30, 100, 400, "proszek", "Czyste węglowodany, szybko dostępne"),
-    ("Fruktoza", 30, 100, 399, "cukier", "Wolniej metabolizowana niż glukoza; stosować z umiarem"),
-    ("Mieszanka MD:FR (1:0.8)", 30, 100, 399, "mieszanka", 
-     "Maltodekstryna:Fruktoza w stosunku 1:0.8 — szybkie uzupełnienie CHO"),
+# Przykładowe dane produktów CHO - rozszerzone dla kolarstwa
+CHO_SAMPLE_DATA: List[Tuple] = [
+    ("Żel SiS GO", 60, 36.7, 138, "żel", "szybka", "Popularny żel bez kofeiny"),
+    ("Żel Maurten 100", 40, 62.5, 250, "żel", "szybka", "Żel hydrożelowy, łagodny dla żołądka"),
+    ("Żel z kofeiną", 40, 55, 200, "żel", "szybka", "Na ostatnie godziny wyścigu"),
+    ("Baton Clif", 68, 66, 400, "baton", "średnia", "Dobre na długie jazdy w Z2"),
+    ("Daktyle Medjool (3 szt)", 72, 75, 277, "naturalny", "średnia", "Naturalne źródło CHO"),
+    ("Banan", 120, 23, 89, "naturalny", "średnia", "Klasyka, dobry na przerwę"),
+    ("Napój Maurten 320", 500, 16, 64, "napój", "szybka", "80g CHO na bidon 500ml"),
+    ("Napój SiS GO", 500, 7.2, 29, "napój", "szybka", "36g CHO na bidon"),
+    ("Maltodekstryna", 30, 100, 400, "proszek", "bardzo szybka", "Do własnych miksów"),
+    ("Fruktoza", 30, 100, 399, "proszek", "średnia", "Mieszać z MD 1:0.8"),
+    ("Mix MD:Fruktoza 1:0.8", 54, 100, 399, "mieszanka", "szybka", "Optymalny stosunek 90g/h"),
+    ("Rodzynki", 40, 79, 299, "naturalny", "średnia", "Wygodne w kieszeni"),
+    ("Żelki Haribo", 50, 77, 343, "słodycze", "szybka", "Szybkie cukry na sprint"),
+    ("Ryż biały (ugotowany)", 150, 28, 130, "posiłek", "średnia", "Carb-loading dzień przed"),
+    ("Makaron (ugotowany)", 200, 25, 131, "posiłek", "średnia", "Bazowy posiłek kolarski"),
+]
+
+
+# =============================================================================
+# TYPY TRENINGÓW
+# =============================================================================
+
+TRAINING_TYPES: List[str] = [
+    "Z2 Wytrzymałość",
+    "Z3 Tempo",
+    "Sweet Spot",
+    "FTP Interwały",
+    "VO2max Interwały",
+    "Sprinty",
+    "Wyścig/Zawody",
+    "Regeneracja",
+    "Test FTP",
+    "Grupowa jazda",
+    "Commute",
+    "Inne"
 ]
