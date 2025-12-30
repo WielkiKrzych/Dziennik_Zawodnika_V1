@@ -1,12 +1,12 @@
 """
-Style Excel dla Kombajnu Triathlonisty.
+Style Excel dla Dziennika Kolarza.
 
 Ten moduł definiuje wszystkie style używane w arkuszach Excel,
 zapewniając spójność wizualną i łatwość modyfikacji.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
+
 
 from openpyxl.cell import Cell
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side

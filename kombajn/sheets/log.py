@@ -72,17 +72,35 @@ class LogSheet(BaseSheet):
                 cell.border = self.styles.thick_right_border
     
     def _format_data_rows(self, ws: Worksheet) -> None:
-        """Formatuje wiersze danych (żółte/szare tło, ramki)."""
-        max_rows = SHEET_CONFIG.MAX_LOG_ROWS + 1
+        """
+        Formatuje wiersze danych (żółte/szare tło, ramki).
         
-        for i in range(1, len(LOG_HEADERS) + 1):
-            is_input = i in LOG_INPUT_COLUMNS
-            is_section_end = i in LOG_SECTION_END_COLUMNS
-            border = self.styles.get_section_border(is_section_end)
-            fill = self.styles.input_fill if is_input else self.styles.formula_fill
-            
+        Optymalizacja: Pre-compute kolumn properties dla O(1) lookups.
+        """
+        max_rows = SHEET_CONFIG.MAX_LOG_ROWS + 1
+        num_columns = len(LOG_HEADERS)
+        
+        # Pre-compute sets for O(1) membership testing
+        input_columns_set = frozenset(LOG_INPUT_COLUMNS)
+        section_end_set = frozenset(LOG_SECTION_END_COLUMNS)
+        
+        # Cache style objects to avoid repeated attribute access
+        input_fill = self.styles.input_fill
+        formula_fill = self.styles.formula_fill
+        thin_border = self.styles.thin_border
+        thick_border = self.styles.thick_right_border
+        
+        # Pre-compute column styles (fill, border) for each column
+        column_styles = []
+        for i in range(1, num_columns + 1):
+            fill = input_fill if i in input_columns_set else formula_fill
+            border = thick_border if i in section_end_set else thin_border
+            column_styles.append((fill, border))
+        
+        # Apply styles - iterate by column first (better cache locality)
+        for col_idx, (fill, border) in enumerate(column_styles, 1):
             for row in range(2, max_rows + 1):
-                cell = ws.cell(row=row, column=i)
+                cell = ws.cell(row=row, column=col_idx)
                 cell.fill = fill
                 cell.border = border
     

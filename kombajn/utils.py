@@ -1,11 +1,12 @@
 """
-Funkcje narzędziowe dla Kombajnu Triathlonisty.
+Funkcje narzędziowe dla Dziennika Kolarza.
 
 Ten moduł zawiera funkcje pomocnicze do:
 - Walidacji i bezpieczeństwa ścieżek plików
 - Konfiguracji logowania
 - Innych operacji wspólnych
 """
+
 
 import logging
 import re

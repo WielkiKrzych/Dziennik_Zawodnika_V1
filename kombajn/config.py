@@ -1,5 +1,5 @@
 """
-Konfiguracja i stałe dla Kombajnu Kolarza.
+Konfiguracja i stałe dla Dziennika Kolarza.
 
 Ten moduł zawiera wszystkie wartości domyślne, stałe konfiguracyjne
 i parametry dla dziennika treningowego zgodnego z WKO5/INSCYD.
@@ -224,7 +224,7 @@ LOG_INPUT_COLUMNS: List[int] = [
     11, 12, 13,  # Czas, Dystans, Przewyższenia
     14, 15, 16,  # Avg/NP/Max Power
     17, 18, 19,  # Kadencja, HR
-    31,      # Spożyte Kcal
+    30,      # Spożyte Kcal (kolumna 30, nie 31)
     35, 36, 37,  # Spożyte makro
     38, 39,  # CHO/h, Nawodnienie
     40, 41, 42   # Typ, RPE, Notatki
@@ -309,3 +309,47 @@ TRAINING_TYPES: List[str] = [
     "Commute",
     "Inne"
 ]
+
+
+# =============================================================================
+# WALIDACJA KONFIGURACJI
+# =============================================================================
+
+def _validate_config() -> None:
+    """
+    Waliduje spójność konfiguracji przy imporcie modułu.
+    
+    Raises:
+        AssertionError: Gdy konfiguracja jest niespójna
+    """
+    # Sprawdź czy liczba nagłówków = liczba szerokości kolumn
+    assert len(LOG_HEADERS) == len(LOG_COLUMN_WIDTHS), (
+        f"Niezgodność: LOG_HEADERS ({len(LOG_HEADERS)}) != "
+        f"LOG_COLUMN_WIDTHS ({len(LOG_COLUMN_WIDTHS)})"
+    )
+    
+    # Sprawdź czy wszystkie indeksy input columns są w zakresie
+    max_col = len(LOG_HEADERS)
+    invalid_input_cols = [c for c in LOG_INPUT_COLUMNS if c < 1 or c > max_col]
+    assert not invalid_input_cols, (
+        f"LOG_INPUT_COLUMNS zawiera nieprawidłowe indeksy: {invalid_input_cols}. "
+        f"Zakres: 1-{max_col}"
+    )
+    
+    # Sprawdź czy wszystkie indeksy section end są w zakresie
+    invalid_section_cols = [c for c in LOG_SECTION_END_COLUMNS if c < 1 or c > max_col]
+    assert not invalid_section_cols, (
+        f"LOG_SECTION_END_COLUMNS zawiera nieprawidłowe indeksy: {invalid_section_cols}. "
+        f"Zakres: 1-{max_col}"
+    )
+    
+    # Sprawdź liczba nagłówków CHO = liczba szerokości
+    assert len(CHO_HEADERS) == len(CHO_COLUMN_WIDTHS), (
+        f"Niezgodność: CHO_HEADERS ({len(CHO_HEADERS)}) != "
+        f"CHO_COLUMN_WIDTHS ({len(CHO_COLUMN_WIDTHS)})"
+    )
+
+
+# Uruchom walidację przy imporcie
+_validate_config()
+
